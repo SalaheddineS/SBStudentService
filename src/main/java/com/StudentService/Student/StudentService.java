@@ -1,10 +1,12 @@
 package com.StudentService.Student;
 
+import com.StudentService.Clients.RESTApi_validation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -16,9 +18,12 @@ public class StudentService {
 
     @Autowired
     private MongoTemplate mongoTemplate;
+    @Autowired
+    private RESTApi_validation _restApi_validation;
 
-
-    public List<Student> getStudents() {
+    public List<Student> getStudents(HttpHeaders headers) {
+        boolean isAuthentified = _restApi_validation.ValidateAuthentified(headers.getFirst("Authorization"));
+        if(!isAuthentified) throw new RuntimeException("You are not authentified");
         try {
             return mongoTemplate.findAll(Student.class, "students");
         } catch (Exception e) {
@@ -26,7 +31,9 @@ public class StudentService {
         }
     }
 
-    public Student getStudent(String id) {
+    public Student getStudent(String id,HttpHeaders headers) {
+        boolean isAuthentified = _restApi_validation.ValidateAuthentified(headers.getFirst("Authorization"));
+        if(!isAuthentified) throw new RuntimeException("You are not authentified");
         try {
             Query query = new Query();
             query.addCriteria(Criteria.where("id").is(id));
@@ -36,7 +43,9 @@ public class StudentService {
         }
     }
 
-    public ResponseEntity<String> AddStudent(Student student) throws FileAlreadyExistsException {
+    public ResponseEntity<String> AddStudent(Student student, HttpHeaders headers) throws FileAlreadyExistsException {
+            boolean isAuthentified = _restApi_validation.ValidateAuthentified(headers.getFirst("Authorization"));
+        if(!isAuthentified) throw new RuntimeException("You are not authentified");
         try {
             Query query = new Query();
             query.addCriteria(Criteria.where("email").is(student.getEmail()));
@@ -50,7 +59,9 @@ public class StudentService {
     }
 
 
-    public ResponseEntity<String> EditStudent(String id, Student info) {
+    public ResponseEntity<String> EditStudent(String id, Student info,HttpHeaders headers) {
+        boolean isAuthentified = _restApi_validation.ValidateAuthentified(headers.getFirst("Authorization"));
+        if(!isAuthentified) throw new RuntimeException("You are not authentified");
         try {
             Query query = new Query();
             query.addCriteria(Criteria.where("id").is(id));
@@ -64,6 +75,5 @@ public class StudentService {
             throw new RuntimeException("Error on the editing process, for more details check this:" + e);
         }
     }
-
 
 }
