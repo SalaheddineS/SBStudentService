@@ -2,12 +2,14 @@ package com.StudentService.Student;
 
 import com.StudentService.Clients.RESTApi_validation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.nio.file.FileAlreadyExistsException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/students")
@@ -52,6 +54,25 @@ public class StudentController {
         }
     }
 
+    @PostMapping("/verify")
+    public boolean existsBySkill(@RequestBody Map<String, String> skill) {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://localhost:8082/api/v1/association/VerifySkill";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Create a map to hold the skill value
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("skill", skill.get("skill"));
+
+        // Pass the map directly to the HttpEntity constructor
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
+
+        // Use exchange instead of postForObject for better error handling
+        boolean response = restTemplate.exchange(url, HttpMethod.POST, entity, Boolean.class).getBody();
+        return response;
+    }
 
 
 }
