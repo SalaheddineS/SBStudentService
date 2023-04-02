@@ -1,25 +1,32 @@
 package com.StudentService.Student;
 
+import com.StudentService.Clients.AssociationAPI;
 import com.StudentService.Clients.RESTApi_validation;
+import com.StudentService.Repository.MongoRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
 import java.nio.file.FileAlreadyExistsException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class StudentService {
-
+    @Autowired
+    MongoRepo _mongoRepo;
     @Autowired
     private MongoTemplate mongoTemplate;
     @Autowired
     private RESTApi_validation _restApi_validation;
+    @Autowired
+    AssociationAPI _associationAPI;
 
     public List<Student> getStudents(HttpHeaders headers) {
         boolean isAuthentified = _restApi_validation.ValidateAuthentified(headers.getFirst("Authorization"));
@@ -74,6 +81,22 @@ public class StudentService {
         } catch (Exception e) {
             throw new RuntimeException("Error on the editing process, for more details check this:" + e);
         }
+    }
+
+    public ResponseEntity<String> addSkillToUser(String email,String skill){
+        String url="http://localhost:8082/api/v1/association/addAssociation";
+        boolean emailExists=_mongoRepo.existsByEmail(email);
+        if(!emailExists) throw new RuntimeException("Email doesn't exist");
+        boolean skillExists= _associationAPI.existsBySkill(skill);
+        if(!skillExists) throw new RuntimeException("Skill doesn't exists");
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers=new HttpHeaders();
+        Map<String,String> body=new HashMap<>();
+        body.put("email",email);
+        body.put("skill",skill);
+        HttpEntity<Map<String,String>> entity=new HttpEntity<>(body,headers);
+        ResponseEntity<String> result=restTemplate.exchange(url,HttpMethod.POST,entity,String.class);
+        return result;
     }
 
 }
